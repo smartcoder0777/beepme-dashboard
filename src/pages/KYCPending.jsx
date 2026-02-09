@@ -116,6 +116,7 @@ export default function KYCPending() {
                         {u.email}
                       </Link>
                       <p className="text-sm text-gray-500 truncate">{u.fullName || 'No name'}</p>
+                      {u.phone && <p className="text-xs text-gray-500 truncate">{u.phone}</p>}
                     </div>
                     <Link
                       to={`/users/${u.id}`}
@@ -124,6 +125,19 @@ export default function KYCPending() {
                       View profile →
                     </Link>
                   </div>
+                  {(u.vehicles && u.vehicles.length > 0) && (
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <p className="text-xs font-medium text-gray-600 mb-1">Vehicles</p>
+                      <div className="flex flex-wrap gap-3 text-xs text-gray-600">
+                        {u.vehicles.map((v) => (
+                          <span key={v.id} className="bg-white px-2 py-1 rounded border border-gray-200">
+                            {[v.make, v.model, v.year].filter(Boolean).join(' ')} — {v.licensePlate || 'No plate'}
+                            {v.vin && ` · VIN: ${v.vin}`}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <ul className="divide-y divide-gray-100">
                   {docs.map((doc) => (
@@ -131,10 +145,15 @@ export default function KYCPending() {
                       key={doc.id}
                       className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
                     >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="flex items-center gap-3 min-w-0 flex-1 flex-wrap">
                         <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-700 shrink-0">
                           {formatDocType(doc.documentType)}
                         </span>
+                        {doc.createdAt && (
+                          <span className="text-xs text-gray-500 shrink-0">
+                            Uploaded {new Date(doc.createdAt).toLocaleString()}
+                          </span>
+                        )}
                         {doc.documentUrl && (
                           <a
                             href={doc.documentUrl.startsWith('http') ? doc.documentUrl : `/${doc.documentUrl}`}

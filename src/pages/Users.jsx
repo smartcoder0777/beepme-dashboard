@@ -12,11 +12,14 @@ export default function Users() {
   const [search, setSearch] = useState('');
   const [kycFilter, setKycFilter] = useState(searchParams.get('kycStatus') || '');
   const [blockedFilter, setBlockedFilter] = useState(searchParams.get('isBlocked') === 'true' ? 'true' : '');
+  const [includeDeleted, setIncludeDeleted] = useState(false);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const limit = 20;
 
   useEffect(() => {
     setPage(1);
-  }, [search, kycFilter, blockedFilter]);
+  }, [search, kycFilter, blockedFilter, dateFrom, dateTo, includeDeleted]);
 
   useEffect(() => {
     setLoading(true);
@@ -24,6 +27,9 @@ export default function Users() {
     if (search) params.search = search;
     if (kycFilter) params.kycStatus = kycFilter;
     if (blockedFilter) params.isBlocked = blockedFilter;
+    if (dateFrom) params.createdAtFrom = dateFrom;
+    if (dateTo) params.createdAtTo = dateTo;
+    if (includeDeleted) params.includeDeleted = 'true';
     api
       .get('/admin/users', { params })
       .then(({ data }) => {
@@ -33,7 +39,7 @@ export default function Users() {
       })
       .catch((err) => setError(err.response?.data?.error || 'Failed to load users'))
       .finally(() => setLoading(false));
-  }, [page, search, kycFilter, blockedFilter]);
+  }, [page, search, kycFilter, blockedFilter, dateFrom, dateTo, includeDeleted]);
 
   async function toggleBlock(userId, isBlocked) {
     try {
@@ -56,7 +62,7 @@ export default function Users() {
         <div className="p-4 flex flex-wrap gap-3 border-b border-gray-200">
           <input
             type="search"
-            placeholder="Search by email or name..."
+            placeholder="Search by email, name, phone, or user ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="rounded-lg border border-gray-300 px-3 py-2 w-64 text-sm"
@@ -80,6 +86,31 @@ export default function Users() {
             <option value="true">Blocked</option>
             <option value="false">Not blocked</option>
           </select>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={includeDeleted}
+              onChange={(e) => setIncludeDeleted(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            Include deleted
+          </label>
+          <div className="flex items-center gap-2 text-sm">
+            <label className="text-gray-500 shrink-0">From</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            />
+            <label className="text-gray-500 shrink-0">To</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
         </div>
         {error && <p className="p-4 text-red-600 text-sm">{error}</p>}
         {loading ? (
@@ -111,7 +142,7 @@ export default function Users() {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        {u.isBlocked ? <span className="text-red-600 font-medium">Blocked</span> : 'Active'}
+                        {u.deletedAt ? <span className="text-gray-600 font-medium">Deleted</span> : u.isBlocked ? <span className="text-red-600 font-medium">Blocked</span> : 'Active'}
                       </td>
                       <td className="py-3 px-4 flex gap-2">
                         <Link
@@ -120,13 +151,15 @@ export default function Users() {
                         >
                           View
                         </Link>
-                        <button
-                          type="button"
-                          onClick={() => toggleBlock(u.id, u.isBlocked)}
-                          className="text-amber-600 hover:underline"
-                        >
-                          {u.isBlocked ? 'Unblock' : 'Block'}
-                        </button>
+                        {!u.deletedAt && (
+                          <button
+                            type="button"
+                            onClick={() => toggleBlock(u.id, u.isBlocked)}
+                            className="text-amber-600 hover:underline"
+                          >
+                            {u.isBlocked ? 'Unblock' : 'Block'}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

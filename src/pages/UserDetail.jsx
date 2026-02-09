@@ -12,16 +12,22 @@ export default function UserDetail() {
   const [actionLoading, setActionLoading] = useState('');
   const [kycStatus, setKycStatus] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [blockReason, setBlockReason] = useState('');
+  const [showBlockForm, setShowBlockForm] = useState(false);
+  const [deletionReason, setDeletionReason] = useState('');
+  const [userAlerts, setUserAlerts] = useState([]);
 
   useEffect(() => {
     Promise.all([
       api.get(`/admin/users/${userId}`),
       api.get(`/kyc/admin/user/${userId}`).catch(() => ({ data: null })),
+      api.get(`/admin/users/${userId}/alerts`).catch(() => ({ data: { alerts: [] } })),
     ])
-      .then(([userRes, kycRes]) => {
+      .then(([userRes, kycRes, alertsRes]) => {
         setUser(userRes.data.user);
         setKycStatus(userRes.data.user?.kycStatus || '');
         if (kycRes?.data) setKycInfo(kycRes.data);
+        setUserAlerts(alertsRes?.data?.alerts || []);
       })
       .catch((err) => setError(err.response?.data?.error || 'Failed to load user'))
       .finally(() => setLoading(false));
@@ -43,8 +49,10 @@ export default function UserDetail() {
   async function handleBlock() {
     setActionLoading('block');
     try {
-      await api.post(`/admin/users/${userId}/block`);
-      setUser((u) => (u ? { ...u, isBlocked: true } : u));
+      await api.post(`/admin/users/${userId}/block`, { reason: blockReason || undefined });
+      setUser((u) => (u ? { ...u, isBlocked: true, blockReason: blockReason || null } : u));
+      setShowBlockForm(false);
+      setBlockReason('');
     } catch (err) {
       alert(err.response?.data?.error || 'Block failed');
     } finally {
@@ -56,7 +64,7 @@ export default function UserDetail() {
     setActionLoading('unblock');
     try {
       await api.post(`/admin/users/${userId}/unblock`);
-      setUser((u) => (u ? { ...u, isBlocked: false } : u));
+      setUser((u) => (u ? { ...u, isBlocked: false, blockReason: null } : u));
     } catch (err) {
       alert(err.response?.data?.error || 'Unblock failed');
     } finally {
@@ -68,7 +76,7 @@ export default function UserDetail() {
     if (!deleteConfirm) return;
     setActionLoading('delete');
     try {
-      await api.delete(`/admin/users/${userId}`);
+      await api.delete(`/admin/users/${userId}`, { data: { reason: deletionReason || undefined } });
       navigate('/users', { replace: true });
     } catch (err) {
       alert(err.response?.data?.error || 'Delete failed');
@@ -102,7 +110,8 @@ export default function UserDetail() {
               <select
                 value={kycStatus}
                 onChange={(e) => setKycStatus(e.target.value)}
-                className="rounded border border-gray-300 px-2 py-1 text-sm"
+                disabled={!!user.deletedAt}
+                className="rounded border border-gray-300 px-2 py-1 text-sm disabled:opacity-60"
               >
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
@@ -117,58 +126,109 @@ export default function UserDetail() {
                 {actionLoading === 'kyc' ? 'Saving...' : 'Save'}
               </button>
             </dd>
-            <dt className="text-gray-500">Status</dt><dd>{user.isBlocked ? <span className="text-red-600 font-medium">Blocked</span> : 'Active'}</dd>
+            <dt className="text-gray-500">Status</dt>
+            <dd>
+              {user.deletedAt ? (
+                <span className="text-gray-600 font-medium">Deleted</span>
+              ) : user.isBlocked ? (
+                <span className="text-red-600 font-medium">Blocked</span>
+              ) : (
+                'Active'
+              )}
+            </dd>
+            {user.blockReason && (
+              <>
+                <dt className="text-gray-500">Block reason</dt><dd className="text-gray-700">{user.blockReason}</dd>
+              </>
+            )}
+            {user.deletedAt && (
+              <>
+                <dt className="text-gray-500">Deletion reason</dt><dd className="text-gray-700">{user.deletionReason || '—'}</dd>
+              </>
+            )}
           </dl>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-          <h2 className="font-medium text-gray-900 mb-3">Actions</h2>
-          <div className="flex flex-wrap gap-3">
-            {user.isBlocked ? (
-              <button
-                type="button"
-                disabled={actionLoading === 'unblock'}
-                onClick={handleUnblock}
-                className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm hover:bg-green-700 disabled:opacity-50"
-              >
-                {actionLoading === 'unblock' ? '...' : 'Unblock'}
-              </button>
-            ) : (
-              <button
-                type="button"
-                disabled={actionLoading === 'block' || user.role === 'admin'}
-                onClick={handleBlock}
-                className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm hover:bg-amber-700 disabled:opacity-50"
-              >
-                {actionLoading === 'block' ? '...' : 'Block'}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setDeleteConfirm(true)}
-              disabled={user.role === 'admin'}
-              className="px-4 py-2 rounded-lg border border-red-600 text-red-600 text-sm hover:bg-red-50 disabled:opacity-50"
-            >
-              Delete user
-            </button>
-          </div>
-          {deleteConfirm && (
-            <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
-              <p className="text-sm text-red-800 mb-2">Permanently delete this user? This cannot be undone.</p>
-              <div className="flex gap-2">
+        {!user.deletedAt && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h2 className="font-medium text-gray-900 mb-3">Actions</h2>
+            <div className="flex flex-wrap gap-3">
+              {user.isBlocked ? (
                 <button
                   type="button"
-                  onClick={handleDelete}
-                  disabled={actionLoading === 'delete'}
-                  className="px-3 py-1 rounded bg-red-600 text-white text-sm"
+                  disabled={actionLoading === 'unblock'}
+                  onClick={handleUnblock}
+                  className="px-4 py-2 rounded-lg bg-green-600 text-white text-sm hover:bg-green-700 disabled:opacity-50"
                 >
-                  {actionLoading === 'delete' ? 'Deleting...' : 'Confirm delete'}
+                  {actionLoading === 'unblock' ? '...' : 'Unblock'}
                 </button>
-                <button type="button" onClick={() => setDeleteConfirm(false)} className="px-3 py-1 rounded border border-gray-400 text-sm">Cancel</button>
-              </div>
+              ) : (
+                <>
+                  {!showBlockForm ? (
+                    <button
+                      type="button"
+                      disabled={actionLoading === 'block' || user.role === 'admin'}
+                      onClick={() => setShowBlockForm(true)}
+                      className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm hover:bg-amber-700 disabled:opacity-50"
+                    >
+                      Block
+                    </button>
+                  ) : (
+                    <div className="flex flex-wrap items-end gap-2">
+                      <input
+                        type="text"
+                        placeholder="Block reason (optional)"
+                        value={blockReason}
+                        onChange={(e) => setBlockReason(e.target.value)}
+                        className="rounded border border-gray-300 px-3 py-2 text-sm w-64"
+                      />
+                      <button
+                        type="button"
+                        disabled={actionLoading === 'block'}
+                        onClick={handleBlock}
+                        className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm"
+                      >
+                        {actionLoading === 'block' ? '...' : 'Confirm block'}
+                      </button>
+                      <button type="button" onClick={() => { setShowBlockForm(false); setBlockReason(''); }} className="px-3 py-2 rounded border border-gray-400 text-sm">Cancel</button>
+                    </div>
+                  )}
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(true)}
+                disabled={user.role === 'admin'}
+                className="px-4 py-2 rounded-lg border border-red-600 text-red-600 text-sm hover:bg-red-50 disabled:opacity-50"
+              >
+                Delete user
+              </button>
             </div>
-          )}
-        </div>
+            {deleteConfirm && (
+              <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+                <p className="text-sm text-red-800 mb-2">Soft-delete this user? They will not be able to log in. Data is retained.</p>
+                <input
+                  type="text"
+                  placeholder="Deletion reason (optional)"
+                  value={deletionReason}
+                  onChange={(e) => setDeletionReason(e.target.value)}
+                  className="mb-2 w-full rounded border border-red-200 px-3 py-2 text-sm"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={actionLoading === 'delete'}
+                    className="px-3 py-1 rounded bg-red-600 text-white text-sm"
+                  >
+                    {actionLoading === 'delete' ? 'Deleting...' : 'Confirm delete'}
+                  </button>
+                  <button type="button" onClick={() => { setDeleteConfirm(false); setDeletionReason(''); }} className="px-3 py-1 rounded border border-gray-400 text-sm">Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {documents.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
@@ -185,6 +245,23 @@ export default function UserDetail() {
             </ul>
           </div>
         )}
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+          <h2 className="font-medium text-gray-900 mb-3">Alerts history</h2>
+          {userAlerts.length === 0 ? (
+            <p className="text-sm text-gray-500">No alerts</p>
+          ) : (
+            <ul className="space-y-2 text-sm">
+              {userAlerts.map((a) => (
+                <li key={a.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                  <span>{a.carMake} {a.carModel} — {a.licensePlate}</span>
+                  <span className={`px-2 py-0.5 rounded text-xs ${a.status === 'active' ? 'bg-amber-100 text-amber-800' : a.status === 'found' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}`}>{a.status}</span>
+                  <span className="text-gray-500">{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ''}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
