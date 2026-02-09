@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Alerts from './pages/Alerts';
 import Users from './pages/Users';
 import UserDetail from './pages/UserDetail';
 import KYCPending from './pages/KYCPending';
@@ -34,6 +35,7 @@ export default function App() {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="alerts" element={<Alerts />} />
         <Route path="users" element={<Users />} />
         <Route path="users/:userId" element={<UserDetail />} />
         <Route path="kyc-pending" element={<KYCPending />} />

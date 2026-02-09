@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 const nav = [
   { to: '/', label: 'Dashboard' },
+  { to: '/alerts', label: 'Alerts' },
   { to: '/users', label: 'Users' },
   { to: '/kyc-pending', label: 'KYC Pending' },
   { to: '/settings', label: 'Settings' },

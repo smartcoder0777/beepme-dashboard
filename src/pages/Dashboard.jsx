@@ -21,7 +21,7 @@ export default function Dashboard() {
 
   const cards = [
     { label: 'Total Users', value: stats.totalUsers ?? 0, to: '/users', color: 'bg-blue-500' },
-    { label: 'Active Alerts', value: stats.activeAlerts ?? 0, color: 'bg-amber-500' },
+    { label: 'Active Alerts', value: stats.activeAlerts ?? 0, to: '/alerts', color: 'bg-amber-500' },
     { label: 'Pending KYC', value: stats.pendingKYC ?? 0, to: '/kyc-pending', color: 'bg-orange-500' },
     { label: 'Blocked Users', value: stats.blockedUsers ?? 0, to: '/users?isBlocked=true', color: 'bg-red-500' },
   ];
