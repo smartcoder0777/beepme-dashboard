@@ -92,6 +92,9 @@ export default function UserDetail() {
     ...(kycInfo?.user?.vehicles || []).flatMap((v) => v.documents || []),
   ].filter(Boolean);
 
+  const vehicles = kycInfo?.user?.vehicles || [];
+  const pendingVehicles = vehicles.filter((v) => v.verificationStatus === 'pending');
+
   return (
     <div>
       <div className="mb-4">
@@ -245,6 +248,55 @@ export default function UserDetail() {
             </ul>
           </div>
         )}
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+          <h2 className="font-medium text-gray-900 mb-3">Vehicles</h2>
+          {vehicles.length === 0 ? (
+            <p className="text-sm text-gray-500">No vehicles registered</p>
+          ) : (
+            <ul className="space-y-3 text-sm">
+              {vehicles.map((v) => (
+                <li key={v.id} className="py-2 border-b border-gray-100 last:border-0">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-medium text-gray-900">
+                      {[v.year, v.make, v.model].filter(Boolean).join(' ')} — {v.licensePlate || 'No plate'}
+                      {v.vin && <span className="text-gray-500 font-normal ml-1">(VIN: {v.vin})</span>}
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${
+                        v.verificationStatus === 'approved'
+                          ? 'bg-green-100 text-green-800'
+                          : v.verificationStatus === 'rejected'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {v.verificationStatus === 'pending' ? 'Pending' : v.verificationStatus === 'approved' ? 'Approved' : 'Rejected'}
+                    </span>
+                  </div>
+                  {pendingVehicles.some((p) => p.id === v.id) && (
+                    <p className="mt-1 text-amber-700 text-xs">Awaiting document verification</p>
+                  )}
+                  {(v.documents?.length > 0) && (
+                    <ul className="mt-1.5 ml-3 text-gray-600 space-y-1">
+                      {v.documents.map((d) => (
+                        <li key={d.id} className="flex items-center gap-2">
+                          <span>{d.documentType === 'car_insurance' ? 'Insurance' : d.documentType === 'vehicle_registration' ? 'Registration' : d.documentType}</span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${d.verificationStatus === 'approved' ? 'bg-green-100 text-green-700' : d.verificationStatus === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                            {d.verificationStatus || 'pending'}
+                          </span>
+                          {d.documentUrl && (
+                            <a href={d.documentUrl.startsWith('http') ? d.documentUrl : `/${d.documentUrl}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">View</a>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
           <h2 className="font-medium text-gray-900 mb-3">Alerts history</h2>

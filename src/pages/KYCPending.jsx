@@ -35,6 +35,14 @@ export default function KYCPending() {
     return [...fromUser, ...fromVehicles];
   }
 
+  function hasPendingVehicles(u) {
+    return (u.vehicles || []).some((v) => v.verificationStatus === 'pending');
+  }
+
+  function shouldShowUser(u) {
+    return allPendingDocs(u).length > 0 || hasPendingVehicles(u);
+  }
+
   async function verify(documentId, status, rejectionReason) {
     setVerifying(documentId);
     try {
@@ -68,6 +76,7 @@ export default function KYCPending() {
   }
 
   const totalPending = users.reduce((acc, u) => acc + allPendingDocs(u).length, 0);
+  const usersWithPending = users.filter(shouldShowUser);
 
   return (
     <div className="space-y-6">
@@ -75,14 +84,14 @@ export default function KYCPending() {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">KYC Pending</h1>
           <p className="mt-1 text-sm text-gray-500">
-            {totalPending === 0
-              ? 'No documents awaiting verification'
-              : `${totalPending} document${totalPending !== 1 ? 's' : ''} from ${users.filter((u) => allPendingDocs(u).length > 0).length} user${users.filter((u) => allPendingDocs(u).length > 0).length !== 1 ? 's' : ''}`}
+            {totalPending === 0 && usersWithPending.length === 0
+              ? 'No documents or vehicles awaiting verification'
+              : `${totalPending} document${totalPending !== 1 ? 's' : ''} from ${usersWithPending.length} user${usersWithPending.length !== 1 ? 's' : ''}`}
           </p>
         </div>
       </div>
 
-      {users.length === 0 || totalPending === 0 ? (
+      {users.length === 0 || (totalPending === 0 && usersWithPending.length === 0) ? (
         <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/50 py-16 px-6 text-center">
           <div className="mx-auto w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 mb-3">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -96,7 +105,8 @@ export default function KYCPending() {
         <div className="space-y-5">
           {users.map((u) => {
             const docs = allPendingDocs(u);
-            if (docs.length === 0) return null;
+            const pendingVehicles = (u.vehicles || []).filter((v) => v.verificationStatus === 'pending');
+            if (!shouldShowUser(u)) return null;
             const initial = (u.fullName || u.email || '?').charAt(0).toUpperCase();
             return (
               <div
@@ -127,12 +137,22 @@ export default function KYCPending() {
                   </div>
                   {(u.vehicles && u.vehicles.length > 0) && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-xs font-medium text-gray-600 mb-1">Vehicles</p>
+                      <p className="text-xs font-medium text-gray-600 mb-1">
+                        Vehicles
+                        {pendingVehicles.length > 0 && (
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-amber-700 bg-amber-100 font-medium">
+                            {pendingVehicles.length} pending verification
+                          </span>
+                        )}
+                      </p>
                       <div className="flex flex-wrap gap-3 text-xs text-gray-600">
                         {u.vehicles.map((v) => (
-                          <span key={v.id} className="bg-white px-2 py-1 rounded border border-gray-200">
+                          <span key={v.id} className="bg-white px-2 py-1 rounded border border-gray-200 inline-flex items-center gap-1.5">
                             {[v.make, v.model, v.year].filter(Boolean).join(' ')} — {v.licensePlate || 'No plate'}
                             {v.vin && ` · VIN: ${v.vin}`}
+                            {v.verificationStatus === 'pending' && (
+                              <span className="text-amber-600 font-medium">(Pending)</span>
+                            )}
                           </span>
                         ))}
                       </div>
@@ -140,6 +160,11 @@ export default function KYCPending() {
                   )}
                 </div>
                 <ul className="divide-y divide-gray-100">
+                  {docs.length === 0 && pendingVehicles.length > 0 && (
+                    <li className="px-5 py-4 text-sm text-gray-500 italic">
+                      {pendingVehicles.length} vehicle{pendingVehicles.length !== 1 ? 's' : ''} pending verification. Documents may not be uploaded yet — view profile to see details.
+                    </li>
+                  )}
                   {docs.map((doc) => (
                     <li
                       key={doc.id}
