@@ -165,9 +165,9 @@ export default function KYCPending() {
                       {pendingVehicles.length} vehicle{pendingVehicles.length !== 1 ? 's' : ''} pending verification. Documents may not be uploaded yet — view profile to see details.
                     </li>
                   )}
-                  {docs.map((doc) => (
+                  {docs.map((doc, i) => (
                     <li
-                      key={doc.id}
+                      key={`${doc.id}-${i}`}
                       className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1 flex-wrap">

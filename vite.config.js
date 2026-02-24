@@ -8,12 +8,14 @@ export default defineConfig({
     host: true, // listen on 0.0.0.0 so browser can connect (e.g. if localhost resolution differs)
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'https://trackerbackend-production-875d.up.railway.app',
         changeOrigin: true,
+        secure: true,
       },
       '/uploads': {
-        target: 'http://localhost:3000',
+        target: 'https://trackerbackend-production-875d.up.railway.app',
         changeOrigin: true,
+        secure: true,
       },
     },
   },
