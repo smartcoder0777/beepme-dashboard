@@ -18,6 +18,7 @@ export default function Alerts() {
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [search, setSearch] = useState('');
   const [updating, setUpdating] = useState(null);
+  const [deleting, setDeleting] = useState(null);
 
   const limit = 20;
 
@@ -54,6 +55,29 @@ export default function Alerts() {
     }
   }
 
+  async function deleteAlert(alertId) {
+    if (
+      !window.confirm(
+        'Permanently delete this alert and its photos, public chat, and related notifications? This cannot be undone.'
+      )
+    ) {
+      return;
+    }
+    setDeleting(alertId);
+    try {
+      await api.delete(`/admin/alerts/${alertId}`);
+      setAlerts((prev) => prev.filter((a) => a.id !== alertId));
+      setPagination((p) => ({
+        ...p,
+        total: Math.max(0, (p.total || 0) - 1),
+      }));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Delete failed');
+    } finally {
+      setDeleting(null);
+    }
+  }
+
   const { total, totalPages } = pagination;
 
   return (
@@ -62,7 +86,7 @@ export default function Alerts() {
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Alerts</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Stolen car alerts — view and update status
+            Stolen car alerts — update status or delete permanently
           </p>
         </div>
       </div>
@@ -139,26 +163,36 @@ export default function Alerts() {
                         {a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '—'}
                       </td>
                       <td className="py-3 px-4">
-                        {a.status === 'active' && (
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => updateStatus(a.id, 'found')}
-                              disabled={updating === a.id}
-                              className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50"
-                            >
-                              {updating === a.id ? '…' : 'Mark found'}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => updateStatus(a.id, 'cancelled')}
-                              disabled={updating === a.id}
-                              className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 text-xs font-medium hover:bg-gray-50 disabled:opacity-50"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex flex-col gap-2 items-start">
+                          {a.status === 'active' && (
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => updateStatus(a.id, 'found')}
+                                disabled={updating === a.id || deleting === a.id}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50"
+                              >
+                                {updating === a.id ? '…' : 'Mark found'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => updateStatus(a.id, 'cancelled')}
+                                disabled={updating === a.id || deleting === a.id}
+                                className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 text-xs font-medium hover:bg-gray-50 disabled:opacity-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => deleteAlert(a.id)}
+                            disabled={updating === a.id || deleting === a.id}
+                            className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50"
+                          >
+                            {deleting === a.id ? 'Deleting…' : 'Delete'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
