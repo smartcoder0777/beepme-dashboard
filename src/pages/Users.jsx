@@ -15,6 +15,7 @@ export default function Users() {
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [actionUserId, setActionUserId] = useState('');
   const limit = 20;
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function Users() {
   }, [page, search, kycFilter, blockedFilter, dateFrom, dateTo, includeDeleted]);
 
   async function toggleBlock(userId, isBlocked) {
+    setActionUserId(userId);
     try {
       if (isBlocked) await api.post(`/admin/users/${userId}/unblock`);
       else await api.post(`/admin/users/${userId}/block`);
@@ -50,6 +52,39 @@ export default function Users() {
       );
     } catch (err) {
       alert(err.response?.data?.error || 'Action failed');
+    } finally {
+      setActionUserId('');
+    }
+  }
+
+  async function deleteUser(user) {
+    if (!window.confirm(`Soft-delete user ${user.email}?`)) return;
+
+    const reasonInput = window.prompt('Deletion reason (optional)') ?? '';
+    const reason = reasonInput.trim();
+
+    setActionUserId(user.id);
+    try {
+      await api.delete(`/admin/users/${user.id}`, {
+        data: { reason: reason || undefined },
+      });
+      setUsers((prev) => {
+        if (includeDeleted) {
+          return prev.map((u) =>
+            u.id === user.id
+              ? { ...u, deletedAt: new Date().toISOString(), deletionReason: reason || null }
+              : u
+          );
+        }
+        return prev.filter((u) => u.id !== user.id);
+      });
+      if (!includeDeleted) {
+        setTotal((prev) => Math.max(0, prev - 1));
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || 'Delete failed');
+    } finally {
+      setActionUserId('');
     }
   }
 
@@ -155,9 +190,20 @@ export default function Users() {
                           <button
                             type="button"
                             onClick={() => toggleBlock(u.id, u.isBlocked)}
-                            className="text-amber-600 hover:underline"
+                            disabled={actionUserId === u.id}
+                            className="text-amber-600 hover:underline disabled:opacity-50"
                           >
                             {u.isBlocked ? 'Unblock' : 'Block'}
+                          </button>
+                        )}
+                        {!u.deletedAt && (
+                          <button
+                            type="button"
+                            onClick={() => deleteUser(u)}
+                            disabled={actionUserId === u.id || u.role === 'admin'}
+                            className="text-red-600 hover:underline disabled:opacity-50"
+                          >
+                            {actionUserId === u.id ? 'Deleting...' : 'Delete'}
                           </button>
                         )}
                       </td>
