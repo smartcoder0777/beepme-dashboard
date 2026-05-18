@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/client';
+import { formatVehicleMakeModelYear } from '../utils/vehicleDisplay';
 
 export default function UserDetail() {
   const { userId } = useParams();
@@ -116,6 +117,7 @@ export default function UserDetail() {
                 disabled={!!user.deletedAt}
                 className="rounded border border-gray-300 px-2 py-1 text-sm disabled:opacity-60"
               >
+                <option value="not_submitted">Not submitted</option>
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
@@ -259,7 +261,7 @@ export default function UserDetail() {
                 <li key={v.id} className="py-2 border-b border-gray-100 last:border-0">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-medium text-gray-900">
-                      {[v.year, v.make, v.model].filter(Boolean).join(' ')} — {v.licensePlate || 'No plate'}
+                      {formatVehicleMakeModelYear(v)} — {v.licensePlate || 'No plate'}
                       {v.vin && <span className="text-gray-500 font-normal ml-1">(VIN: {v.vin})</span>}
                     </span>
                     <span

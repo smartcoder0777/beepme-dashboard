@@ -108,6 +108,7 @@ export default function Users() {
             className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
           >
             <option value="">All KYC</option>
+            <option value="not_submitted">Not submitted</option>
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
@@ -169,11 +170,14 @@ export default function Users() {
                       <td className="py-3 px-4">{u.email}</td>
                       <td className="py-3 px-4">{u.fullName || '—'}</td>
                       <td className="py-3 px-4">
+                        {/** Keep not_submitted distinct from pending for exact KYC lifecycle. */}
                         <span className={`px-2 py-0.5 rounded text-xs ${
                           u.kycStatus === 'approved' ? 'bg-green-100 text-green-800' :
-                          u.kycStatus === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                          u.kycStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                          u.kycStatus === 'not_submitted' ? 'bg-slate-100 text-slate-700' :
+                          'bg-amber-100 text-amber-800'
                         }`}>
-                          {u.kycStatus || 'pending'}
+                          {u.kycStatus === 'not_submitted' ? 'not submitted' : (u.kycStatus || 'pending')}
                         </span>
                       </td>
                       <td className="py-3 px-4">

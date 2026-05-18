@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
+import { formatVehicleMakeModelYear } from '../utils/vehicleDisplay';
 
 function formatDocType(str) {
   if (!str) return 'Document';
@@ -8,6 +9,18 @@ function formatDocType(str) {
     .split('_')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(' ');
+}
+
+/** Backend default for new uploads is pending; treat missing status as pending so rows never disappear from this page. */
+function isPendingVerification(value) {
+  const s = String(value ?? 'pending').toLowerCase();
+  return s === 'pending';
+}
+
+function resolveDocumentHref(documentUrl) {
+  if (!documentUrl) return '#';
+  if (documentUrl.startsWith('http')) return documentUrl;
+  return documentUrl.startsWith('/') ? documentUrl : `/${documentUrl}`;
 }
 
 export default function KYCPending() {
@@ -30,13 +43,15 @@ export default function KYCPending() {
   useEffect(() => load(), []);
 
   function allPendingDocs(u) {
-    const fromUser = (u.kycDocuments || []).filter((d) => d.verificationStatus === 'pending');
-    const fromVehicles = (u.vehicles || []).flatMap((v) => (v.documents || []).filter((d) => d.verificationStatus === 'pending'));
+    const fromUser = (u.kycDocuments || []).filter((d) => isPendingVerification(d.verificationStatus));
+    const fromVehicles = (u.vehicles || []).flatMap((v) =>
+      (v.documents || []).filter((d) => isPendingVerification(d.verificationStatus)),
+    );
     return [...fromUser, ...fromVehicles];
   }
 
   function hasPendingVehicles(u) {
-    return (u.vehicles || []).some((v) => v.verificationStatus === 'pending');
+    return (u.vehicles || []).some((v) => isPendingVerification(v.verificationStatus));
   }
 
   function shouldShowUser(u) {
@@ -105,7 +120,7 @@ export default function KYCPending() {
         <div className="space-y-5">
           {users.map((u) => {
             const docs = allPendingDocs(u);
-            const pendingVehicles = (u.vehicles || []).filter((v) => v.verificationStatus === 'pending');
+            const pendingVehicles = (u.vehicles || []).filter((v) => isPendingVerification(v.verificationStatus));
             if (!shouldShowUser(u)) return null;
             const initial = (u.fullName || u.email || '?').charAt(0).toUpperCase();
             return (
@@ -148,9 +163,9 @@ export default function KYCPending() {
                       <div className="flex flex-wrap gap-3 text-xs text-gray-600">
                         {u.vehicles.map((v) => (
                           <span key={v.id} className="bg-white px-2 py-1 rounded border border-gray-200 inline-flex items-center gap-1.5">
-                            {[v.make, v.model, v.year].filter(Boolean).join(' ')} — {v.licensePlate || 'No plate'}
+                            {formatVehicleMakeModelYear(v)} — {v.licensePlate || 'No plate'}
                             {v.vin && ` · VIN: ${v.vin}`}
-                            {v.verificationStatus === 'pending' && (
+                            {isPendingVerification(v.verificationStatus) && (
                               <span className="text-amber-600 font-medium">(Pending)</span>
                             )}
                           </span>
@@ -181,7 +196,7 @@ export default function KYCPending() {
                         )}
                         {doc.documentUrl && (
                           <a
-                            href={doc.documentUrl.startsWith('http') ? doc.documentUrl : `/${doc.documentUrl}`}
+                            href={resolveDocumentHref(doc.documentUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm text-primary hover:text-primary-600 font-medium inline-flex items-center gap-1 shrink-0"

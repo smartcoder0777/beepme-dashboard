@@ -1,6 +1,16 @@
 # TrackerDashboard
 
-Admin dashboard for BeepMe (Car Tracker), built with React, Vite, and Tailwind CSS. Uses the same TrackerBackend API; admin access requires a user with `role: 'admin'`.
+Admin dashboard for **BeepMe (Car Tracker)**, built with React, Vite, and Tailwind CSS. Uses [TrackerBackend](../TrackerBackend/) (`role: 'admin'` required). Mobile app: [TrackerFrontend](../TrackerFrontend/).
+
+## Project documentation
+
+Ops and architecture docs are in **TrackerFrontend**:
+
+| Document | Description |
+|----------|-------------|
+| [APP_OPERATIONS.md](../TrackerFrontend/APP_OPERATIONS.md) | Deploy, env vars, credentials, maintenance (including first admin user) |
+| [APP_FLOWS.md](../TrackerFrontend/APP_FLOWS.md) | Architecture and flow diagrams (Mermaid) |
+| [docs/flows/](../TrackerFrontend/docs/flows/) | Exported HTML — `npm run docs:flows` from **TrackerFrontend** |
 
 ## Setup
 
