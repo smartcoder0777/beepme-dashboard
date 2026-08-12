@@ -40,7 +40,7 @@ Dashboard runs at **http://localhost:5174**. API requests are proxied to the bac
 | `VITE_ASSET_BASE_URL` (optional) | `https://trackerbackend-production-875d.up.railway.app` |
 
 3. Build / start are already in `railway.toml`:
-   - Build: `npm ci && npm run build`
+   - Build: `npm run build` (Nixpacks installs deps first; don’t double-run `npm ci`)
    - Start: `npm start` (serves `dist/` on `$PORT`)
 4. On **TrackerBackend**, add the dashboard public URL to `CORS_ORIGIN` (comma-separated), e.g.  
    `https://your-dashboard.up.railway.app`

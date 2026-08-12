@@ -1,10 +1,12 @@
 # Railway Nixpacks / static SPA
-# Build: npm run build (set VITE_API_BASE_URL in Railway Variables)
-# Start: npm start
+# Set VITE_API_BASE_URL in Railway Variables (build-time).
+#
+# Do NOT run `npm ci` in buildCommand — Nixpacks already installs deps.
+# A second `npm ci` can fail with: EBUSY rmdir node_modules/.cache
 
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm ci && npm run build"
+buildCommand = "npm run build"
 
 [deploy]
 startCommand = "npm start"
