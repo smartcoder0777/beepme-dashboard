@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/client';
+import { resolveAssetUrl } from '../config';
 import { formatVehicleMakeModelYear } from '../utils/vehicleDisplay';
 
 export default function UserDetail() {
@@ -243,7 +244,7 @@ export default function UserDetail() {
                 <li key={doc.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                   <span>{doc.documentType || 'document'} — {doc.verificationStatus || 'pending'}</span>
                   {doc.documentUrl && (
-                    <a href={doc.documentUrl.startsWith('http') ? doc.documentUrl : `/${doc.documentUrl}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">View</a>
+                    <a href={resolveAssetUrl(doc.documentUrl)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">View</a>
                   )}
                 </li>
               ))}
@@ -288,7 +289,7 @@ export default function UserDetail() {
                             {d.verificationStatus || 'pending'}
                           </span>
                           {d.documentUrl && (
-                            <a href={d.documentUrl.startsWith('http') ? d.documentUrl : `/${d.documentUrl}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">View</a>
+                            <a href={resolveAssetUrl(d.documentUrl)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">View</a>
                           )}
                         </li>
                       ))}

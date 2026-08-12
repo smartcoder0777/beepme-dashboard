@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
+import { resolveAssetUrl } from '../config';
 import { formatVehicleMakeModelYear } from '../utils/vehicleDisplay';
 
 function formatDocType(str) {
@@ -18,9 +19,7 @@ function isPendingVerification(value) {
 }
 
 function resolveDocumentHref(documentUrl) {
-  if (!documentUrl) return '#';
-  if (documentUrl.startsWith('http')) return documentUrl;
-  return documentUrl.startsWith('/') ? documentUrl : `/${documentUrl}`;
+  return resolveAssetUrl(documentUrl);
 }
 
 export default function KYCPending() {

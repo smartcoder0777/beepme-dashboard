@@ -29,6 +29,23 @@ npm run dev
 
 Dashboard runs at **http://localhost:5174**. API requests are proxied to the backend (see `vite.config.js`).
 
+## Deploy to Railway
+
+1. Create a new Railway service from this repo / folder.
+2. Set **build-time** variables (Vite bakes these into the bundle):
+
+| Variable | Example |
+|----------|---------|
+| `VITE_API_BASE_URL` | `https://trackerbackend-production-875d.up.railway.app/api` |
+| `VITE_ASSET_BASE_URL` (optional) | `https://trackerbackend-production-875d.up.railway.app` |
+
+3. Build / start are already in `railway.toml`:
+   - Build: `npm ci && npm run build`
+   - Start: `npm start` (serves `dist/` on `$PORT`)
+4. On **TrackerBackend**, add the dashboard public URL to `CORS_ORIGIN` (comma-separated), e.g.  
+   `https://your-dashboard.up.railway.app`
+5. Log in with an account that has `role: 'admin'`.
+
 ## Features
 
 - **Login** — `POST /api/auth/login`; only users with `role === 'admin'` can access.
