@@ -3,7 +3,6 @@ import api from '../api/client';
 
 const KNOWN_KEYS = [
   { key: 'ALERT_RADIUS_KM', label: 'Alert radius (km)', type: 'number' },
-  { key: 'LOCATION_UPDATE_FREQUENCY_MINUTES', label: 'Location update frequency (minutes)', type: 'number' },
 ];
 
 export default function Settings() {

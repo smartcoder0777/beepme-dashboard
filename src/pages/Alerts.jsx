@@ -17,6 +17,8 @@ export default function Alerts() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [search, setSearch] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [updating, setUpdating] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
@@ -24,13 +26,15 @@ export default function Alerts() {
 
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, search]);
+  }, [statusFilter, search, fromDate, toDate]);
 
   useEffect(() => {
     setLoading(true);
     const params = { page, limit };
     if (statusFilter) params.status = statusFilter;
     if (search.trim()) params.search = search.trim();
+    if (fromDate) params.fromDate = fromDate;
+    if (toDate) params.toDate = toDate;
     api
       .get('/admin/alerts', { params })
       .then(({ data }) => {
@@ -39,7 +43,7 @@ export default function Alerts() {
       })
       .catch((err) => setError(err.response?.data?.error || 'Failed to load alerts'))
       .finally(() => setLoading(false));
-  }, [page, statusFilter, search]);
+  }, [page, statusFilter, search, fromDate, toDate]);
 
   async function updateStatus(alertId, status) {
     setUpdating(alertId);
@@ -110,6 +114,26 @@ export default function Alerts() {
             <option value="found">Found</option>
             <option value="cancelled">Cancelled</option>
           </select>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="whitespace-nowrap">From</span>
+            <input
+              type="date"
+              value={fromDate}
+              max={toDate || undefined}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+            />
+          </label>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <span className="whitespace-nowrap">To</span>
+            <input
+              type="date"
+              value={toDate}
+              min={fromDate || undefined}
+              onChange={(e) => setToDate(e.target.value)}
+              className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+            />
+          </label>
         </div>
 
         {error && <p className="p-4 text-red-600 text-sm">{error}</p>}
