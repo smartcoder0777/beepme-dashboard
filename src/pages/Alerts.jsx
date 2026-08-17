@@ -8,6 +8,24 @@ const statusColors = {
   cancelled: 'bg-gray-100 text-gray-700',
 };
 
+function toLocalYmd(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function alertInDateRange(alert, fromDate, toDate) {
+  if (!fromDate && !toDate) return true;
+  const ymd = toLocalYmd(alert.createdAt);
+  if (!ymd) return false;
+  if (fromDate && ymd < fromDate) return false;
+  if (toDate && ymd > toDate) return false;
+  return true;
+}
+
 export default function Alerts() {
   const [alerts, setAlerts] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
@@ -35,11 +53,30 @@ export default function Alerts() {
     if (search.trim()) params.search = search.trim();
     if (fromDate) params.fromDate = fromDate;
     if (toDate) params.toDate = toDate;
+    // When dates are set, pull a larger page so we can still filter if the API
+    // has not been redeployed with fromDate/toDate support yet.
+    if (fromDate || toDate) {
+      params.page = 1;
+      params.limit = 500;
+    }
     api
       .get('/admin/alerts', { params })
       .then(({ data }) => {
-        setAlerts(data.alerts || []);
-        setPagination(data.pagination || { total: 0, page: 1, limit, totalPages: 1 });
+        const rows = data.alerts || [];
+        const filtered = (fromDate || toDate)
+          ? rows.filter((a) => alertInDateRange(a, fromDate, toDate))
+          : rows;
+        setAlerts(filtered);
+        if (fromDate || toDate) {
+          setPagination({
+            total: filtered.length,
+            page: 1,
+            limit: filtered.length || limit,
+            totalPages: 1,
+          });
+        } else {
+          setPagination(data.pagination || { total: 0, page: 1, limit, totalPages: 1 });
+        }
       })
       .catch((err) => setError(err.response?.data?.error || 'Failed to load alerts'))
       .finally(() => setLoading(false));
