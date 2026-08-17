@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/client';
-import { isEphemeralUploadUrl, resolveAssetUrl } from '../config';
 import { formatVehicleMakeModelYear } from '../utils/vehicleDisplay';
+import KycDocumentViewer from '../components/KycDocumentViewer';
 
 export default function UserDetail() {
   const { userId } = useParams();
@@ -18,6 +18,7 @@ export default function UserDetail() {
   const [showBlockForm, setShowBlockForm] = useState(false);
   const [deletionReason, setDeletionReason] = useState('');
   const [userAlerts, setUserAlerts] = useState([]);
+  const [viewer, setViewer] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -244,11 +245,13 @@ export default function UserDetail() {
                 <li key={doc.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                   <span>{doc.documentType || 'document'} — {doc.verificationStatus || 'pending'}</span>
                   {doc.documentUrl && (
-                    isEphemeralUploadUrl(doc.documentUrl) ? (
-                      <span className="text-amber-700 text-sm">File unavailable — ask user to re-upload</span>
-                    ) : (
-                    <a href={resolveAssetUrl(doc.documentUrl)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">View</a>
-                    )
+                    <button
+                      type="button"
+                      onClick={() => setViewer({ docs: documents, index: Math.max(0, documents.findIndex((d) => d.id === doc.id)) })}
+                      className="text-primary hover:underline"
+                    >
+                      View
+                    </button>
                   )}
                 </li>
               ))}
@@ -293,11 +296,13 @@ export default function UserDetail() {
                             {d.verificationStatus || 'pending'}
                           </span>
                           {d.documentUrl && (
-                            isEphemeralUploadUrl(d.documentUrl) ? (
-                              <span className="text-amber-700 text-xs">File unavailable — re-upload</span>
-                            ) : (
-                            <a href={resolveAssetUrl(d.documentUrl)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">View</a>
-                            )
+                            <button
+                              type="button"
+                              onClick={() => setViewer({ docs: documents, index: Math.max(0, documents.findIndex((item) => item.id === d.id)) })}
+                              className="text-primary hover:underline text-xs"
+                            >
+                              View
+                            </button>
                           )}
                         </li>
                       ))}
@@ -326,6 +331,15 @@ export default function UserDetail() {
           )}
         </div>
       </div>
+
+      {viewer && viewer.index >= 0 && (
+        <KycDocumentViewer
+          docs={viewer.docs}
+          index={viewer.index}
+          onIndexChange={(next) => setViewer((v) => (v ? { ...v, index: next } : v))}
+          onClose={() => setViewer(null)}
+        />
+      )}
     </div>
   );
 }

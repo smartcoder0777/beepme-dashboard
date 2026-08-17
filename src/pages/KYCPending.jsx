@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
-import { isEphemeralUploadUrl, resolveAssetUrl } from '../config';
 import { formatVehicleMakeModelYear } from '../utils/vehicleDisplay';
+import KycDocumentViewer from '../components/KycDocumentViewer';
 
 function formatDocType(str) {
   if (!str) return 'Document';
@@ -18,10 +18,6 @@ function isPendingVerification(value) {
   return s === 'pending';
 }
 
-function resolveDocumentHref(documentUrl) {
-  return resolveAssetUrl(documentUrl);
-}
-
 export default function KYCPending() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +25,7 @@ export default function KYCPending() {
   const [verifying, setVerifying] = useState(null);
   const [rejectReason, setRejectReason] = useState({});
   const [rejectDoc, setRejectDoc] = useState(null);
+  const [viewer, setViewer] = useState(null);
 
   function load() {
     setLoading(true);
@@ -194,23 +191,17 @@ export default function KYCPending() {
                           </span>
                         )}
                         {doc.documentUrl && (
-                          isEphemeralUploadUrl(doc.documentUrl) ? (
-                            <span className="text-sm text-amber-700 font-medium" title="This file was stored on Railway disk and is gone after deploy. Ask the user to re-upload.">
-                              File unavailable — ask user to re-upload
-                            </span>
-                          ) : (
-                          <a
-                            href={resolveDocumentHref(doc.documentUrl)}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            type="button"
+                            onClick={() => setViewer({ docs, index: i })}
                             className="text-sm text-primary hover:text-primary-600 font-medium inline-flex items-center gap-1 shrink-0"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                             View file
-                          </a>
-                          )
+                          </button>
                         )}
                       </div>
                       <div className="flex items-center gap-2 sm:shrink-0">
@@ -269,6 +260,15 @@ export default function KYCPending() {
             );
           })}
         </div>
+      )}
+
+      {viewer && (
+        <KycDocumentViewer
+          docs={viewer.docs}
+          index={viewer.index}
+          onIndexChange={(next) => setViewer((v) => (v ? { ...v, index: next } : v))}
+          onClose={() => setViewer(null)}
+        />
       )}
     </div>
   );
