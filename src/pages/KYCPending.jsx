@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
-import { resolveAssetUrl } from '../config';
+import { isEphemeralUploadUrl, resolveAssetUrl } from '../config';
 import { formatVehicleMakeModelYear } from '../utils/vehicleDisplay';
 
 function formatDocType(str) {
@@ -194,6 +194,11 @@ export default function KYCPending() {
                           </span>
                         )}
                         {doc.documentUrl && (
+                          isEphemeralUploadUrl(doc.documentUrl) ? (
+                            <span className="text-sm text-amber-700 font-medium" title="This file was stored on Railway disk and is gone after deploy. Ask the user to re-upload.">
+                              File unavailable — ask user to re-upload
+                            </span>
+                          ) : (
                           <a
                             href={resolveDocumentHref(doc.documentUrl)}
                             target="_blank"
@@ -205,6 +210,7 @@ export default function KYCPending() {
                             </svg>
                             View file
                           </a>
+                          )
                         )}
                       </div>
                       <div className="flex items-center gap-2 sm:shrink-0">

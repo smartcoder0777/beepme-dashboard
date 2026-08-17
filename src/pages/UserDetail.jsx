@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/client';
-import { resolveAssetUrl } from '../config';
+import { isEphemeralUploadUrl, resolveAssetUrl } from '../config';
 import { formatVehicleMakeModelYear } from '../utils/vehicleDisplay';
 
 export default function UserDetail() {
@@ -244,7 +244,11 @@ export default function UserDetail() {
                 <li key={doc.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                   <span>{doc.documentType || 'document'} — {doc.verificationStatus || 'pending'}</span>
                   {doc.documentUrl && (
+                    isEphemeralUploadUrl(doc.documentUrl) ? (
+                      <span className="text-amber-700 text-sm">File unavailable — ask user to re-upload</span>
+                    ) : (
                     <a href={resolveAssetUrl(doc.documentUrl)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">View</a>
+                    )
                   )}
                 </li>
               ))}
@@ -289,7 +293,11 @@ export default function UserDetail() {
                             {d.verificationStatus || 'pending'}
                           </span>
                           {d.documentUrl && (
+                            isEphemeralUploadUrl(d.documentUrl) ? (
+                              <span className="text-amber-700 text-xs">File unavailable — re-upload</span>
+                            ) : (
                             <a href={resolveAssetUrl(d.documentUrl)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">View</a>
+                            )
                           )}
                         </li>
                       ))}

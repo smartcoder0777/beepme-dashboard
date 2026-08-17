@@ -19,6 +19,12 @@ export function getAssetBaseUrl() {
   return '';
 }
 
+/** Local Railway /uploads paths are ephemeral and typically 404 after deploy. */
+export function isEphemeralUploadUrl(path) {
+  if (!path || typeof path !== 'string') return false;
+  return path.startsWith('/uploads/') || path.includes('/uploads/');
+}
+
 /** Resolve backend asset paths (e.g. /uploads/...) for <a href> / <img>. */
 export function resolveAssetUrl(path) {
   if (!path) return '#';
