@@ -75,6 +75,31 @@ export default function UserDetail() {
     }
   }
 
+  async function handleDeleteVehicle(vehicle) {
+    const label = `${formatVehicleMakeModelYear(vehicle)} (${vehicle.licensePlate || 'no plate'})`;
+    if (!window.confirm(`Permanently delete vehicle ${label}? Documents for this car will also be removed.`)) {
+      return;
+    }
+    setActionLoading(`vehicle-${vehicle.id}`);
+    try {
+      await api.delete(`/admin/users/${userId}/vehicles/${vehicle.id}`);
+      setKycInfo((prev) => {
+        if (!prev?.user) return prev;
+        return {
+          ...prev,
+          user: {
+            ...prev.user,
+            vehicles: (prev.user.vehicles || []).filter((v) => v.id !== vehicle.id),
+          },
+        };
+      });
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete vehicle');
+    } finally {
+      setActionLoading('');
+    }
+  }
+
   async function handleDelete() {
     if (!deleteConfirm) return;
     setActionLoading('delete');
@@ -213,7 +238,9 @@ export default function UserDetail() {
             </div>
             {deleteConfirm && (
               <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
-                <p className="text-sm text-red-800 mb-2">Soft-delete this user? They will not be able to log in. Data is retained.</p>
+                <p className="text-sm text-red-800 mb-2">
+                  Delete this user? They cannot log in. Email is freed for re-registration, and their vehicles/KYC documents are permanently removed so plates can be reused.
+                </p>
                 <input
                   type="text"
                   placeholder="Deletion reason (optional)"
@@ -272,17 +299,27 @@ export default function UserDetail() {
                       {formatVehicleMakeModelYear(v)} — {v.licensePlate || 'No plate'}
                       {v.vin && <span className="text-gray-500 font-normal ml-1">(VIN: {v.vin})</span>}
                     </span>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${
-                        v.verificationStatus === 'approved'
-                          ? 'bg-green-100 text-green-800'
-                          : v.verificationStatus === 'rejected'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      {v.verificationStatus === 'pending' ? 'Pending' : v.verificationStatus === 'approved' ? 'Approved' : 'Rejected'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium ${
+                          v.verificationStatus === 'approved'
+                            ? 'bg-green-100 text-green-800'
+                            : v.verificationStatus === 'rejected'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {v.verificationStatus === 'pending' ? 'Pending' : v.verificationStatus === 'approved' ? 'Approved' : 'Rejected'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteVehicle(v)}
+                        disabled={actionLoading === `vehicle-${v.id}`}
+                        className="px-2.5 py-1 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {actionLoading === `vehicle-${v.id}` ? 'Deleting…' : 'Delete car'}
+                      </button>
+                    </div>
                   </div>
                   {pendingVehicles.some((p) => p.id === v.id) && (
                     <p className="mt-1 text-amber-700 text-xs">Awaiting document verification</p>

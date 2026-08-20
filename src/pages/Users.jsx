@@ -58,7 +58,7 @@ export default function Users() {
   }
 
   async function deleteUser(user) {
-    if (!window.confirm(`Soft-delete user ${user.email}?`)) return;
+    if (!window.confirm(`Soft-delete user ${user.email}? Vehicles and KYC docs will be removed so plates can be reused.`)) return;
 
     const reasonInput = window.prompt('Deletion reason (optional)') ?? '';
     const reason = reasonInput.trim();
